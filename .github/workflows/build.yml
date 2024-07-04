@@ -1,0 +1,30 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+
+      - name: Build and push Docker image
+        run: |
+          IMAGE_TAG="${{ steps.date.outputs.date }}"
+          docker build -t musk1024/sub:$IMAGE_TAG .
+          docker push musk1024/sub:$IMAGE_TAG
+          docker push musk1024/sub:latest
+          
