@@ -26,5 +26,6 @@ jobs:
           IMAGE_TAG="${{ steps.date.outputs.date }}"
           docker build -t musk1024/sub:$IMAGE_TAG .
           docker push musk1024/sub:$IMAGE_TAG
+          docker tag musk1024/sub:$IMAGE_TAG musk1024/sub:latest
           docker push musk1024/sub:latest
           
