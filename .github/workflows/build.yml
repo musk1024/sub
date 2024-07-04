@@ -1,31 +1,60 @@
-name: Build and Push Docker Image
+name: "docker build release"
 
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - README.md
+      - .github/**
   workflow_dispatch:
 
+env:
+  PROJECT: sub
+
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v2.3.5
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v2
+      - name: Set tag
+        id: tag
+        run: |
+          if [[ -n $(cat Dockerfile | awk '{if($1~"ENV" && $2=="VERSION")print $3}') ]]; then
+            VERSION=$(cat Dockerfile | awk '{if($1~"ENV" && $2=="VERSION")print $3}')
+            echo "tag=$VERSION" >> $GITHUB_ENV
+          else
+            echo "tag=$(date +%Y)-$(date +%m)-$(date +%d)" >> $GITHUB_ENV
+          fi
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2.0.0
+
+      - name: Login Docker Hub
+        uses: docker/login-action@v1 
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y%m%d')"
+      - name: Build and push to docker hub
+        uses: docker/build-push-action@v3.0.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT }}:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT }}:${{ env.tag }}
 
-      - name: Build and push Docker image
-        run: |
-          IMAGE_TAG="${{ steps.date.outputs.date }}"
-          docker build -t musk1024/sub:$IMAGE_TAG .
-          docker push musk1024/sub:$IMAGE_TAG
-          docker tag musk1024/sub:$IMAGE_TAG musk1024/sub:latest
-          docker push musk1024/sub:latest
-          
+      - name: Sync README.md to Docker Hub
+        uses: ms-jpq/sync-dockerhub-readme@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT }}
+          readme: "./README.md"
