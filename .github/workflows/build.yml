@@ -48,8 +48,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT }}:latest
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT }}:${{ env.tag }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.PROJECT }}:latest
 
       - name: Sync README.md to Docker Hub
         uses: ms-jpq/sync-dockerhub-readme@v1
