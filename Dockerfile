@@ -1,5 +1,5 @@
 FROM node:14-alpine AS build
-LABEL maintainer="Musk<musk@168086.xyz>"
+LABEL maintainer="Musk <musk@168086.xyz>"
 
 ENV SUBCONVERTER_VERSION=v0.9.9
 WORKDIR /
